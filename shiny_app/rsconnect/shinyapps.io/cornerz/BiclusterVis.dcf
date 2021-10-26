@@ -1,0 +1,14 @@
+name: BiclusterVis
+title: BiclusterVis
+username:
+account: cornerz
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4215983
+bundleId: 4793709
+url: https://cornerz.shinyapps.io/BiclusterVis/
+when: 1625610774.93818
+lastSyncTime: 1625610774.93818
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: BP_info0.5.xlsx|BP_info0.5_0.05.xlsx|BP_info0.5_0.1.xlsx

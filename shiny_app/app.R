@@ -24,12 +24,16 @@ library(rlist)
 library(DT)
 
 load("biclusterlist2.RData")
+load("biclusterlist3.RData")
 load("survival.RData")
 load("foolist2.RData")
 load("foolist3.RData")
 load("BLCA_PrimaryTumors_Cleaned_H0_05_JcdInd0_3_MinGenes2_MinSamples2_GenesInBiclusters_EdgeBasedSampleEnrichment.RData")
 load("BLCA_PrimaryTumors_Cleaned_L0_05_JcdInd0_3_MinGenes2_MinSamples2_GenesInBiclusters_EdgeBasedSampleEnrichment.RData")
 load("locus.RData")
+load("BP_info_H.RData")
+load("BP_info_L.RData")
+load("map.RData")
 
 round_preserve_sum <- function(x, digits = 0) {
   up <- 10 ^ digits

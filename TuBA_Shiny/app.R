@@ -24,6 +24,7 @@ library(rlist)
 library(DT)
 library(tidyverse)
 library(stringr)
+library(markdown)
 
 source("load_data.R")
 
@@ -36,7 +37,7 @@ ui <- dashboardPage (
       menuItem("Introduction", tabName = "intro"),
       menuItem("Biological Pathways", tabName = "biopath"),
       menuItem("Copy Number", tabName="copynum"),
-      menuItem("Contact", tabName = "contact"))),
+      menuItem("About", tabName = "about"))),
   
   dashboardBody(
     tabItems(
@@ -128,7 +129,7 @@ ui <- dashboardPage (
                 tabsetPanel(
                   tabPanel("Visualization",plotlyOutput(outputId = "mapvis"),width = 9),
                   tabPanel("Gene Information",dataTableOutput(outputId = "table"),textOutput(outputId="bic_genes2"), style = "height:500px; overflow-y: scroll;overflow-x: scroll;",width = 9)))),
-      tabItem("contact",h4("to be added")))))
+      tabItem("about",includeMarkdown("about.md")))))
 
 # Define server logic required to draw a histogram
 server <- function(input, output,session) {

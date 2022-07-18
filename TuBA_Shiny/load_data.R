@@ -31,3 +31,26 @@ full_pval_list <- list("Up" = up_pval_list,"Down" = down_pval_list)
 full_cancer_list <- list("Up" = up_cancer_list,"Down" = down_cancer_list)
 full_BP_list <- list("Up"=up_BP_full,"Down"=down_BP_full)
 full_foo_list <- list("Up"=up_foo_list,"Down"=down_foo_list)
+
+myColors[["1_copy_del"]] <- "#F21A00"
+myColors[["2_copy_del"]] <- "#972D15"
+
+param_high <- list("BLCA"=c(0.05,0.3),"BRCA"=c(0.05,0.3),"CESC"=c("0.075,0.3"),
+                   "COADREAD"=c(0.075,0.4),"ESCA"=c(0.1,0.3),"GBM"=c(0.1,0.5),
+                   "GBMLGG"=c(0.05,0.4),"HNSC"=c(0.05,0.4),"KIRC"=c(0.05,0.4),
+                   "KIRP"=c(0.075,0.4),"LGG"=c(0.05,0.5),"LIHC"=c(0.075,0.3),
+                   "LUAD"=c(0.05,0.3),"LUSC"=c(0.05,0.3),"OV"=c(0.075,0.3),
+                   "PAAD"=c(0.1,0.5),"PCPG"=c(0.1,0.4),"PRAD"=c(0.05,0.4),
+                   "SARC"=c(0.075,0.3),"SKCM"=c(0.075,0.4),"STAD"=c(0.075,0.4),
+                   "THCA"=c(0.05,0.4))
+param_low <- list("BLCA"=c(0.05,0.3),"BRCA"=c(0.05,0.3),"CESC"=c("0.075,0.3"),
+                  "COADREAD"=c(0.075,0.4),"ESCA"=c(0.1,0.3),"GBM"=c(0.1,0.5),
+                  "GBMLGG"=c(0.05,0.4),"HNSC"=c(0.05,0.4),"KIRC"=c(0.05,0.4),
+                  "KIRP"=c(0.075,0.4),"LGG"=c(0.05,0.5),"LIHC"=c(0.075,0.3),
+                  "LUAD"=c(0.05,0.3),"LUSC"=c(0.05,0.3),"OV"=c(0.075,0.3),
+                  "PAAD"=c(0.1,0.5),"PCPG"=c(0.1,0.4),"PRAD"=c(0.05,0.4),
+                  "SARC"=c(0.075,0.3),"SKCM"=c(0.075,0.4),"STAD"=c(0.075,0.4),
+                  "THCA"=c(0.05,0.4))
+TuBA_params <- list("Up"=param_high,"Down"=param_low)
+locus_dat <- read.delim("gene_with_protein_product.txt")
+locus_dat <- locus_dat %>% select(symbol, location)

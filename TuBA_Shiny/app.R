@@ -28,6 +28,7 @@ library(markdown)
 
 source("load_data.R")
 
+
 ui <- dashboardPage (
   
   dashboardHeader(title="Bicluster Visualizations"),
@@ -95,8 +96,8 @@ ui <- dashboardPage (
                 textOutput(outputId="bicinfo"),width = 3),
               mainPanel(
                 tabsetPanel(
-                  tabPanel("Visualization",plotOutput(outputId = "survivalvis"),width = 9),
-                  tabPanel("Gene Information", dataTableOutput(outputId = "survivaltable"),textOutput(outputId = "bic_genes"),style = "height:500px; overflow-y: scroll;overflow-x: scroll;",width = 9)))),
+                  tabPanel("Visualization",plotOutput(outputId = "survivalvis"),textOutput(outputId="param"),width = 9),
+                  tabPanel("Gene Information", dataTableOutput(outputId = "survivaltable"),textOutput(outputId = "bic_genes"),textOutput(outputId="bic_samples"),style = "height:500px; overflow-y: scroll;overflow-x: scroll;",width = 9)))),
       tabItem("copynum",
               useShinyjs(),
               fluidRow(
@@ -121,14 +122,16 @@ ui <- dashboardPage (
                 column(3,selectizeInput(
                   inputId = "chrom",
                   label = "Select the chromosome of interest:",
-                  choices = chrom, multiple=TRUE
+                  selected = NULL,
+                  choices = chrom,
+                  multiple=TRUE
                 ))),
               sidebarPanel(
                 textOutput(outputId= "info"), width = 3),
               mainPanel(
                 tabsetPanel(
-                  tabPanel("Visualization",plotlyOutput(outputId = "mapvis"),width = 9),
-                  tabPanel("Gene Information",dataTableOutput(outputId = "table"),textOutput(outputId="bic_genes2"), style = "height:500px; overflow-y: scroll;overflow-x: scroll;",width = 9)))),
+                  tabPanel("Visualization",plotlyOutput(outputId = "mapvis"),textOutput(outputId="param2"),width = 9),
+                  tabPanel("Gene Information",dataTableOutput(outputId = "table"),textOutput(outputId="bic_genes2"),textOutput(outputId="bic_samples2"), style = "height:500px; overflow-y: scroll;overflow-x: scroll;",width = 9)))),
       tabItem("about",includeMarkdown("about.md")))))
 
 # Define server logic required to draw a histogram
@@ -146,7 +149,7 @@ server <- function(input, output,session) {
         path_filtered <- NULL
       }
       else{
-        path_filtered <- full_BP_list[[input$reg]][[input$type]] %>% filter(GO_term==input$path) %>% filter(p_val < input$pathsig) %>% pull(bic)}
+        path_filtered <- full_BP_list[[input$reg]][[input$type]] %>% filter(GO_term==input$path) %>% filter(as.numeric(p_val) < as.numeric(input$pathsig)) %>% pull(bic)}
       
       if(is.null(input$gene)){
         gene_filtered <- NULL
@@ -190,6 +193,12 @@ server <- function(input, output,session) {
       guides(fill=FALSE) +
       scale_color_manual(labels = c("not in bicluster", "in bicluster"), values = c(2,1))
     })
+  output$param <- renderText({
+    paste0("The TuBA parameters used the ",as.character(TuBA_params[[input$reg]][[input$type]][1])," percentile cutoff and Jaccard index of ",as.character(TuBA_params[[input$reg]][[input$type]][2]))
+  })
+  output$survivaltable <- renderDataTable({
+    datatable(full_cancer_list[[input$reg]][[input$type]][[as.integer(input$bic)]][[1]]%>% select(Gene.ID,chrom),options = list(paging=FALSE))
+  })
   output$bicinfo <- renderText({
     dat <- full_cancer_list[[input$reg]][[input$type]][[as.integer(input$bic)]][[3]]
     samples <- colnames(dat)[-1]
@@ -201,7 +210,16 @@ server <- function(input, output,session) {
     km_fit <- surv_fit(form, data=biclist)
     print(paste0("This bicluster contains: \n ",toString(nrow(full_cancer_list[[input$reg]][[input$type]][[as.integer(input$bic)]][[1]]))," genes, \n ",toString(unique(full_cancer_list[[input$reg]][input$type][[1]][[as.integer(input$bic)]][[1]]$Samples.In.Bicluster))," samples. \n","The KM-analysis outputs a p-value of ",round(surv_pvalue(km_fit,data=biclist)$pval,3)))
   })
+  output$bic_genes <- renderText({
+    paste0('\"',paste(full_cancer_list[[input$reg]][input$type][[1]][[as.integer(input$bic)]][[1]]%>% pull(Gene.ID),collapse='","'),'\"')
+  })
+  output$bic_samples <- renderText({
+    dat <- full_cancer_list[[input$reg]][[input$type]][[as.integer(input$bic)]][[3]]
+    samples <- colnames(dat)[-1]
+    paste0('\"',paste(samples,collapse='","'),'\"')
+  })
   
+  observeEvent(input$reg_copy,
   observeEvent(input$type_copy,
                if(!is.null(input$type_copy)){
                  dat_filtered <- full_data_list[[input$reg_copy]][input$type_copy][[1]] %>% filter(Samples.In.Bicluster > 20)
@@ -217,7 +235,7 @@ server <- function(input, output,session) {
                  names(hbic_chrom_list) <- unique(dat_filtered$Bicluster.No)
                  
                  observeEvent(input$chrom,
-                              if (input$chrom=="all"){
+                              if (is.null(input$chrom)){
                                 updateSelectInput(session,"num",choices = dat_filtered$Bicluster.No)
                               }
                               else {
@@ -254,15 +272,23 @@ server <- function(input, output,session) {
                    km_fit <- surv_fit(form, data=biclist)
                    print(paste0("This bicluster contains: \n ",toString(nrow(full_cancer_list[[input$reg_copy]][[input$type_copy]][[as.integer(input$num)]][[1]]))," genes, \n ",toString(unique(full_cancer_list[[input$reg_copy]][input$type_copy][[1]][[as.integer(input$num)]][[1]]$Samples.In.Bicluster))," samples. \n","The KM-analysis outputs a p-value of ",round(surv_pvalue(km_fit,data=biclist)$pval,3)))
                  })
+                 output$param2 <- renderText({
+                   paste0("The TuBA parameters used the ",as.character(TuBA_params[[input$reg_copy]][[input$type_copy]][1])," percentile cutoff and Jaccard index of ",as.character(TuBA_params[[input$reg_copy]][[input$type_copy]][2]))
+                 })
                  output$table <- renderDataTable({
                    biclist <- full_cancer_list[[input$reg_copy]][input$type_copy][[1]][[as.integer(input$num)]][[1]]
-                   datatable(biclist %>% select(Gene.ID,chrom),options = list(paging=FALSE))
+                   datatable(right_join(locus_dat,biclist %>% select(Gene.ID,chrom),by=c("symbol"="Gene.ID")),options = list(paging=FALSE))
                  })
                  output$bic_genes2 <- renderText({
                    paste0('\"',paste(full_cancer_list[[input$reg_copy]][input$type][[1]][[as.integer(input$bic)]][[1]]%>% pull(Gene.ID),collapse='","'),'\"')
                  })
+                 output$bic_samples2 <- renderText({
+                   dat <- full_cancer_list[[input$reg_copy]][[input$type_copy]][[as.integer(input$bic)]][[3]]
+                   samples <- colnames(dat)[-1]
+                   paste0('\"',paste(samples,collapse='","'),'\"')
+                 })
 
-})}
+}))}
 
 # Run the application 
 shinyApp(ui = ui, server = server)

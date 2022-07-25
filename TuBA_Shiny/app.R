@@ -140,33 +140,36 @@ server <- function(input, output,session) {
     list(input$reg,input$type,input$variable,input$sig,input$gene,input$path,input$pathsig)
   })
   observeEvent(toListen(),{
+    filtered_bics <- full_data_list[[input$reg]][input$type_copy][[1]] %>% filter(Samples.In.Bicluster > 20)
+    filtered_bics <- filtered_bics$Bicluster.No
     if(!is.null(input$type)){
       dat_filtered <- full_data_list[[input$reg]][input$type_copy][[1]] %>% filter(Samples.In.Bicluster > 20)
       updateSelectInput(session,"bic", choices = dat_filtered$Bicluster.No)}
     
-      pval_filtered <- full_pval_list[[input$reg]][[input$type]] %>% filter((!!sym(input$variable))<input$sig) %>% pull(bic)
+      pval_filtered <- intersect(full_pval_list[[input$reg]][[input$type]] %>% filter((!!sym(input$variable))<input$sig) %>% pull(bic), filtered_bics)
       if(is.null(input$path)){
         path_filtered <- NULL
       }
       else{
-        path_filtered <- full_BP_list[[input$reg]][[input$type]] %>% filter(GO_term==input$path) %>% filter(as.numeric(p_val) < as.numeric(input$pathsig)) %>% pull(bic)}
+        path_filtered <- intersect(full_BP_list[[input$reg]][[input$type]] %>% filter(GO_term==input$path) %>% filter(as.numeric(p_val) < as.numeric(input$pathsig)) %>% pull(bic), filtered_bics)}
       
       if(is.null(input$gene)){
         gene_filtered <- NULL
       }
       else {
-        gene_filtered <- full_data_list[[input$reg]][[input$type]] %>% filter(Gene.ID %in% input$gene) %>% count(Bicluster.No) %>% filter(n==length(input$gene)) %>% pull(Bicluster.No)}
+        gene_filtered <- intersect(full_data_list[[input$reg]][[input$type]] %>% filter(Gene.ID %in% input$gene) %>% count(Bicluster.No) %>% filter(n==length(input$gene)) %>% pull(Bicluster.No), filtered_bics)}
       if (length(gene_filtered)==0){gene_filtered <- NULL}
       if(length(path_filtered)==0){path_filtered <- NULL}
       if(length(pval_filtered)==0){pval_filtered <- NULL}
       mylist <- list(pval_filtered,path_filtered,gene_filtered)
       updated_bic <- Reduce(intersect,mylist[vapply(mylist, Negate(is.null),NA)])
       if(length(updated_bic)!=0){
-        updateSelectInput(session,"bic",choices=updated_bic)}
+        updated <- intersect(updated_bic,filtered_bics)
+        updateSelectInput(session,"bic",choices=updated)}
       else if (length(updated_bic)==0){
         updateSelectInput(session,"bic",choices = NULL)}
       if(is.null(input$gene)&is.null(input$path)&is.null(input$sig)&is.null(input$pathsig)){
-        updateSelectInput(session,"bic",choices=full_data_list[[input$reg]][[input$type]] %>% pull(Bicluster.No))
+        updateSelectInput(session,"bic",choices=intersect(full_data_list[[input$reg]][[input$type]] %>% pull(Bicluster.No),filtered_bics))
         
       }
   })

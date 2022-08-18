@@ -226,7 +226,7 @@ server <- function(input, output,session) {
   observeEvent(input$type_copy,
                if(!is.null(input$type_copy)){
                  dat_filtered <- full_data_list[[input$reg_copy]][input$type_copy][[1]] %>% filter(Samples.In.Bicluster > 20)
-                 updateSelectInput(session,"num", choices = dat_filtered$Bicluster.No)
+                 updateSelectInput(session,"num", choices = unique(dat_filtered$Bicluster.No)) #
                  
                  hbic_chrom_list <- list()
                  for (i in unique(dat_filtered$Bicluster.No)){

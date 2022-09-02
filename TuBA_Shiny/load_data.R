@@ -18,8 +18,10 @@ full_cancer_names <- c("Bladder urothelial carcinoma (BLCA)" = "BLCA", "Breast i
                        "Kidney renal clear cell carcinoma (KIRC)" = "KIRC", "Kidney renal papillary cell carcinoma (KIRP)" = "KIRP", "Brain lower grade glioma (LGG)" = "LGG", "Liver hepatocellular carcinoma (LIHC)" = "LIHC", "Lung adenocarcinoma (LUAD)" = "LUAD",
                        "Lung squamous cell carcinoma (LUSC)" = "LUSC", "Ovarian serous cystadenocarcinoma (OV)" = "OV", "Pancreatic adenocarcinoma (PAAD)" = "PAAD", "Pheochromocytoma and Paraganglioma (PCPG)" = "PCPG", "Prostate adenocarcinoma (PRAD)" = "PRAD",
                        "Sarcoma (SARC)" = "SARC", "Skin cutaneous melanoma (SKCM)" = "SKCM", "Stomach adenocarcinoma (STAD)" = "STAD", "Thyroid carcinoma (THCA)" = "THCA")
-chrom <-  c("chr19","Missing","chr11","chr16","chr17","chr1","chr2","chr12","chr7","chr10",  
-            "chr14","chr9","chrX","chr8","chr22","chr20","chr5","chr15","chr3","chr6","chr4","chr13","chr18","chr21","all")
+# chrom <-  c("chr19","Missing","chr11","chr16","chr17","chr1","chr2","chr12","chr7","chr10",  
+#             "chr14","chr9","chrX","chr8","chr22","chr20","chr5","chr15","chr3","chr6","chr4","chr13","chr18","chr21","all")
+chrom <- c("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15",
+           "chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","Missing","all")
 myColors <- c("#DD8D29", "#E2D200", "#46ACC8", "#E58601", "#B40F20","#808080")
 names(myColors) <- c("high_amplification","amplification","no_change","1_copy_del","2_copy_del","Missing")
 

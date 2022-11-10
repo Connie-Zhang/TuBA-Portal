@@ -25,9 +25,15 @@ library(DT)
 library(tidyverse)
 library(stringr)
 library(markdown)
+library(shinyBS)
 
 source("load_data.R")
-
+my_theme <- theme(axis.line = element_line(colour = "black"),
+                  panel.grid.major = element_line(colour = "grey90"),
+                  panel.grid.minor = element_line(colour = "grey90"),
+                  panel.border = element_blank(),
+                  panel.background = element_blank(),
+                  plot.title = element_text(hjust=0.5,vjust=-1,size=20)) 
 
 ui <- dashboardPage (
   
@@ -51,7 +57,7 @@ ui <- dashboardPage (
                   inputId = "type",
                   label = "Choose cancer of interest:",
                   selected = "BLCA",
-                  choices = full_cancer_names
+                  choices = full_cancer_names[full_cancer_names!="LUSC"]
                 )),
                 column(3, selectInput(
                   inputId = "reg",
@@ -94,10 +100,12 @@ ui <- dashboardPage (
                   selected = "No"))),
               sidebarPanel(
                 textOutput(outputId="bicinfo"),width = 3),
+              # helper("gene",type="inline",content="helloworld"),
               mainPanel(
                 tabsetPanel(
                   tabPanel("Visualization",plotOutput(outputId = "survivalvis"),textOutput(outputId="param"),width = 9),
-                  tabPanel("Gene Information", dataTableOutput(outputId = "survivaltable"),textOutput(outputId = "bic_genes"),textOutput(outputId="bic_samples"),style = "height:500px; overflow-y: scroll;overflow-x: scroll;",width = 9)))),
+                  tabPanel("Gene Information", dataTableOutput(outputId = "survivaltable"),textOutput(outputId = "bic_genes"),textOutput(outputId="bic_samples"),style = "height:500px; overflow-y: scroll;overflow-x: scroll;",width = 9),
+                  tabPanel("Biological Pathway Information", dataTableOutput(outputId = "bptable"),style = "height:500px; overflow-y: scroll;overflow-x: scroll;",width = 9)))),
       tabItem("copynum",
               useShinyjs(),
               fluidRow(
@@ -105,7 +113,7 @@ ui <- dashboardPage (
                   inputId = "type_copy",
                   label = "Choose cancer of interest:",
                   selected = "BLCA",
-                  choices = full_cancer_names)),
+                  choices = full_cancer_names[full_cancer_names!="COADREAD"&full_cancer_names!="GBMLGG"])), 
                 column(3, selectInput(
                   inputId = "reg_copy",
                   label = "Up or down regulated gene expression:",
@@ -139,17 +147,26 @@ server <- function(input, output,session) {
   toListen <- reactive({
     list(input$reg,input$type,input$variable,input$sig,input$gene,input$path,input$pathsig)
   })
+  
+  observeEvent(list(input$type,input$reg),{dat_filtered <- full_data_list[[input$reg]][input$type][[1]] %>% filter(Samples.In.Bicluster > 20)
+  bic_genes = dat_filtered %>% pull(Gene.ID)
+  updateSelectInput(session,"bic", choices = dat_filtered$Bicluster.No)
+  updateSelectizeInput(session,"gene",choices = dat_filtered$Gene.ID)})
+  
   observeEvent(toListen(),{
-    if(!is.null(input$type)){
-      dat_filtered <- full_data_list[[input$reg]][input$type_copy][[1]] %>% filter(Samples.In.Bicluster > 20)
-      updateSelectInput(session,"bic", choices = dat_filtered$Bicluster.No)}
+    #if(!is.null(input$type)){ 
+      # dat_filtered <- full_data_list[[input$reg]][input$type][[1]] %>% filter(Samples.In.Bicluster > 20)
+      # bic_genes = dat_filtered %>% pull(Gene.ID)
+      # updateSelectInput(session,"bic", choices = dat_filtered$Bicluster.No)
+      # updateSelectizeInput(session,"gene",choices = dat_filtered$Gene.ID) #
+      #}
     
       pval_filtered <- full_pval_list[[input$reg]][[input$type]] %>% filter((!!sym(input$variable))<input$sig) %>% pull(bic)
       if(is.null(input$path)){
         path_filtered <- NULL
       }
       else{
-        path_filtered <- full_BP_list[[input$reg]][[input$type]] %>% filter(GO_term==input$path) %>% filter(as.numeric(p_val) < as.numeric(input$pathsig)) %>% pull(bic)}
+        path_filtered <- full_BP_list[[input$reg]][[input$type]] %>% filter(GO_term == input$path) %>% filter(as.numeric(p_val) < as.numeric(input$pathsig)) %>% count(bic) %>% filter(n==length(input$path)) %>% pull(bic)} #
       
       if(is.null(input$gene)){
         gene_filtered <- NULL
@@ -165,10 +182,10 @@ server <- function(input, output,session) {
         updateSelectInput(session,"bic",choices=updated_bic)}
       else if (length(updated_bic)==0){
         updateSelectInput(session,"bic",choices = NULL)}
-      if(is.null(input$gene)&is.null(input$path)&is.null(input$sig)&is.null(input$pathsig)){
-        updateSelectInput(session,"bic",choices=full_data_list[[input$reg]][[input$type]] %>% pull(Bicluster.No))
-        
-      }
+      # if(is.null(input$gene)&is.null(input$path)&is.null(input$sig)&is.null(input$pathsig)){
+      #   updateSelectInput(session,"bic",choices=full_data_list[[input$reg]][[input$type]] %>% pull(Bicluster.No))
+      #   updateSelectizeInput(session,"gene",choices=full_data_list[[input$reg]][[input$type]] %>% pull(Gene.ID))
+      # }
   })
 
   
@@ -179,25 +196,32 @@ server <- function(input, output,session) {
     biclist <- survival %>% mutate(bicluster = as.factor(ifelse(sample %in% samples,1,0)))
 
     form <- as.formula(paste0("Surv(",input$variable,".time,",input$variable,")~bicluster"))
-    km_fit <- survfit(form, data=biclist)
+    km_fit <- surv_fit(form, data=biclist)
+    ggsurvplot(km_fit,data=biclist,conf.int=TRUE,title=paste0(variable_names[[input$variable]]," of \n Cancer Patients \n"), 
+               legend.labs=c("not in bicluster","in bicluster"),
+               legend.title = "Survival of Patients...",
+               legend=c(0.85,0.85),ggtheme = my_theme)
     # fortify(km_fit)
-    ggplot2::autoplot(km_fit) +
-      labs(x = "\n Survival Time (Days) ", y = "Survival Probabilities \n",
-           title = paste0(variable_names[[input$variable]]," of \n Cancer Patients \n"), colour = "Samples") +
-      theme(plot.title = element_text(hjust = 0.5),
-            axis.title.x = element_text(face="bold", colour="#FF7A33", size = 12),
-            axis.title.y = element_text(face="bold", colour="#FF7A33", size = 12),
-            legend.title = element_text(face="bold", size = 10),
-            panel.background = element_rect(fill="white"),
-            panel.grid = element_line(colour="grey", size = 0.25)) +
-      guides(fill=FALSE) +
-      scale_color_manual(labels = c("not in bicluster", "in bicluster"), values = c(2,1))
+    # ggplot2::autoplot(km_fit) +
+    #   labs(x = "\n Survival Time (Days) ", y = "Survival Probabilities \n",
+    #        title = paste0(variable_names[[input$variable]]," of \n Cancer Patients \n"), colour = "Samples") +
+    #   theme(plot.title = element_text(hjust = 0.5),
+    #         axis.title.x = element_text(face="bold", colour="#FF7A33", size = 12),
+    #         axis.title.y = element_text(face="bold", colour="#FF7A33", size = 12),
+    #         legend.title = element_text(face="bold", size = 10),
+    #         panel.background = element_rect(fill="white"),
+    #         panel.grid = element_line(colour="grey", size = 0.25)) +
+    #   guides(fill=FALSE) +
+    #   scale_color_manual(labels = c("not in bicluster", "in bicluster"), values = c(2,1))
     })
   output$param <- renderText({
     paste0("The TuBA parameters used the ",as.character(TuBA_params[[input$reg]][[input$type]][1])," percentile cutoff and Jaccard index of ",as.character(TuBA_params[[input$reg]][[input$type]][2]))
   })
   output$survivaltable <- renderDataTable({
     datatable(full_cancer_list[[input$reg]][[input$type]][[as.integer(input$bic)]][[1]]%>% select(Gene.ID,chrom),options = list(paging=FALSE))
+  })
+  output$bptable <- renderDataTable({
+    datatable(full_BP_list[[input$reg]][[input$type]] %>% filter(bic==as.integer(input$bic)) %>% select(GO_term,p_val) %>% mutate(p_val=round(as.numeric(p_val),3)),options = list(paging=FALSE))
   })
   output$bicinfo <- renderText({
     dat <- full_cancer_list[[input$reg]][[input$type]][[as.integer(input$bic)]][[3]]

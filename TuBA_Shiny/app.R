@@ -41,14 +41,13 @@ ui <- dashboardPage (
   
   dashboardSidebar(
     sidebarMenu(
-      menuItem("Introduction", tabName = "intro"),
+      menuItem("About", tabName = "about"),
       menuItem("Biological Pathways", tabName = "biopath"),
-      menuItem("Copy Number", tabName="copynum"),
-      menuItem("About", tabName = "about"))),
+      menuItem("Copy Number", tabName="copynum"))),
   
   dashboardBody(
     tabItems(
-      tabItem("intro",h4("to be added")),
+      tabItem("about",includeMarkdown("about.md")),
       tabItem("biopath",
               shinyjs::useShinyjs(),
               fluidRow(
@@ -139,8 +138,8 @@ ui <- dashboardPage (
               mainPanel(
                 tabsetPanel(
                   tabPanel("Visualization",plotlyOutput(outputId = "mapvis"),textOutput(outputId="param2"),width = 9),
-                  tabPanel("Gene Information",dataTableOutput(outputId = "table"),textOutput(outputId="bic_genes2"),textOutput(outputId="bic_samples2"), style = "height:500px; overflow-y: scroll;overflow-x: scroll;",width = 9)))),
-      tabItem("about",includeMarkdown("about.md")))))
+                  tabPanel("Gene Information",dataTableOutput(outputId = "table"),textOutput(outputId="bic_genes2"),textOutput(outputId="bic_samples2"), style = "height:500px; overflow-y: scroll;overflow-x: scroll;",width = 9))))
+     )))
 
 # Define server logic required to draw a histogram
 server <- function(input, output,session) {
@@ -181,7 +180,7 @@ server <- function(input, output,session) {
       if(length(updated_bic)!=0){
         updateSelectInput(session,"bic",choices=updated_bic)}
       else if (length(updated_bic)==0){
-        updateSelectInput(session,"bic",choices = NULL)}
+        updateSelectInput(session,"bic",choices = "")} #
       # if(is.null(input$gene)&is.null(input$path)&is.null(input$sig)&is.null(input$pathsig)){
       #   updateSelectInput(session,"bic",choices=full_data_list[[input$reg]][[input$type]] %>% pull(Bicluster.No))
       #   updateSelectizeInput(session,"gene",choices=full_data_list[[input$reg]][[input$type]] %>% pull(Gene.ID))
